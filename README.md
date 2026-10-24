@@ -1,6 +1,6 @@
-# ITElect 4 Backend
+# ITELECT4 Backend
 
-Express and TypeScript API for the ITElect 4 event and RSVP application. It uses MongoDB through Mongoose and is deployed on Vercel.
+Express and TypeScript API for the ITELECT4 event and RSVP application. It uses MongoDB through Mongoose and is deployed on Vercel.
 
 ## Live application
 
@@ -31,6 +31,15 @@ Express and TypeScript API for the ITElect 4 event and RSVP application. It uses
 - Added an origin allowlist configured with `CORS_ORIGIN` for local and deployed frontend origins.
 - Exported the Express app for Vercel serverless deployment.
 
+## GT5 — Gemini AI review route
+
+- Added `POST /api/ai`, a private route that asks Gemini to review a description of an event or RSVP and returns a structured result: `summary`, `highlights`, `suggestions` and `readiness` (`ready`, `almost` or `not-yet`).
+- One Zod schema (`src/schemas/review.ts`) is the TypeScript type, the JSON Schema sent to Gemini, and the check on the reply. The request body is validated first, so a bad request costs no quota.
+- The system prompt and two few-shot examples live in `src/ai/prompt.ts`. The user's text is wrapped in `<submission>` tags and treated as data to reduce prompt injection.
+- The route requires a bearer token and is rate limited to 5 requests per minute per account. Failures return the API's own messages: 400 for a bad body, 429 for quota, 502 for a bad Gemini reply.
+- `GEMINI_API_KEY` stays on the server (`.env` locally, Vercel settings when deployed) and is never sent to the browser.
+- `npm run try-ai` sends one real request from the terminal to check the key, model and schema.
+
 ## API routes
 
 | Method | Route | Access | Purpose |
@@ -45,6 +54,7 @@ Express and TypeScript API for the ITElect 4 event and RSVP application. It uses
 | `POST` | `/api/rsvps` | Bearer token | Creates an RSVP |
 | `PATCH` | `/api/rsvps/:id` | Bearer token | Updates one of the signed-in user's RSVPs |
 | `DELETE` | `/api/rsvps/:id` | Bearer token | Deletes one of the signed-in user's RSVPs |
+| `POST` | `/api/ai` | Bearer token | Returns a Gemini review of an event or RSVP description; 5 requests per minute per account |
 
 Send the JWT in the `Authorization` header for protected routes: `Authorization: Bearer <token>`. RSVP guest counts must be between 1 and 10; statuses are `pending`, `confirmed`, or `waitlisted`.
 
@@ -58,4 +68,6 @@ Requires Node.js and a MongoDB connection string.
 4. Start the API with `npm run dev` (defaults to port `4000`).
 5. Seed the reference events with `npm run seed` when setting up or repopulating the database.
 
-Available scripts: `npm run dev`, `npm run build`, `npm start`, `npm run typecheck`, and `npm run seed`.
+Available scripts: `npm run dev`, `npm run build`, `npm start`, `npm run typecheck`, `npm run seed`, and `npm run try-ai`.
+
+To use the AI route, create a key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and set `GEMINI_API_KEY` in `.env`. Restart `npm run dev` after changing `.env`.

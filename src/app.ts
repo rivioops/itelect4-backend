@@ -9,6 +9,7 @@ import { connectDB } from "./config/db";
 import { authRouter } from "./routes/auth";
 import { rsvpRouter } from "./routes/rsvps";
 import { eventRouter } from "./routes/events";
+import { aiRouter } from "./routes/ai";
 
 export const app = express();
 
@@ -47,6 +48,10 @@ app.get("/api/health", (_req: Request, res: Response) => {
 app.use("/api/auth", authRouter);
 app.use("/api/events", eventRouter);
 app.use("/api/rsvps", rsvpRouter);
+
+// ===== SESSION 11: one more router, mounted like the others =========
+// Private, rate limited, and the only route that talks to Gemini.
+app.use("/api/ai", aiRouter);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({
